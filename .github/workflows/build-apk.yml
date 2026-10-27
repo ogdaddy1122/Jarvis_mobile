@@ -66,6 +66,11 @@ jobs:
           }
           EOF
           gradle wrapper --gradle-version 8.5
+                  echo "android.useAndroidX=true" >
+          gradle.properties
+                  echo 
+          "android.enableJetifier=true" >>
+          gradle.properties
       - name: Build
         run: ./gradlew :app:assembleDebug
       - uses: actions/upload-artifact@v4
