@@ -1,6 +1,5 @@
 name: Build JARVIS APK
 on: [push, workflow_dispatch]
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,66 +9,23 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-
-      - name: Create Full Project
+      - name: Setup Android
+        uses: android-actions/setup-android@v3
+      - name: Create project
         run: |
-          cat > settings.gradle << 'EOF'
-          include ':app'
-          EOF
-
-          cat > build.gradle << 'EOF'
-          buildscript { ext { compose_version = '1.6.8' } }
-          plugins { id 'com.android.application' version '8.2.2' apply false; id 'org.jetbrains.kotlin.android' version '1.9.22' apply false }
-          EOF
-
-          cat > gradlew << 'EOF'
-          #!/bin/sh
-          exec gradle "$@"
-          EOF
-          chmod +x gradlew
-
+          echo "include ':app'" > settings.gradle
+          echo "buildscript {}" > build.gradle
           mkdir -p app/src/main/java/com/jarvis/mobile
-          
-          cat > app/build.gradle << 'EOF'
+          cat > app/build.gradle <<'ENDGRADLE'
           plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
-          android {
-              namespace 'com.jarvis.mobile'
-              compileSdk 34
-              defaultConfig { applicationId "com.jarvis.mobile"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" }
-              buildTypes { release { minifyEnabled false }; debug { minifyEnabled false } }
-              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
-              kotlinOptions { jvmTarget = '17' }
-              buildFeatures { compose true }
-              composeOptions { kotlinCompilerExtensionVersion '1.5.8' }
-          }
-          dependencies {
-              implementation 'androidx.core:core-ktx:1.12.0'
-              implementation 'androidx.activity:activity-compose:1.8.2'
-              implementation 'androidx.compose.ui:ui:1.6.8'
-              implementation 'androidx.compose.material3:material3:1.2.1'
-              implementation 'androidx.compose.ui:ui-tooling-preview:1.6.8'
-          }
-          EOF
-
-          cat > app/src/main/AndroidManifest.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.CALL_PHONE" />
-              <uses-permission android:name="android.permission.READ_CONTACTS" />
-              <uses-permission android:name="android.permission.INTERNET" />
-              <application android:label="JARVIS" android:theme="@android:style/Theme.Material.Light">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-
-          cat > app/src/main/java/com/jarvis/mobile/MainActivity.kt << 'EOF'
+          android { namespace 'com.jarvis.mobile'; compileSdk 34; defaultConfig { applicationId "com.jarvis.mobile"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" }; buildTypes { debug { minifyEnabled false } }; compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }; kotlinOptions { jvmTarget = '17' }; buildFeatures { compose true }; composeOptions { kotlinCompilerExtensionVersion '1.5.8' } }
+          dependencies { implementation 'androidx.core:core-ktx:1.12.0'; implementation 'androidx.activity:activity-compose:1.8.2'; implementation 'androidx.compose.ui:ui:1.6.8'; implementation 'androidx.compose.material3:material3:1.2.1' }
+          ENDGRADLE
+          cat > app/src/main/AndroidManifest.xml <<'ENDMANIFEST'
+          <?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="JARVIS" android:theme="@android:style/Theme.Material.Light"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
+          ENDMANIFEST
+          cat > app/src/main/java/com/jarvis/mobile/MainActivity.kt <<'ENDKOTLIN'
           package com.jarvis.mobile
-          import android.content.Intent
-          import android.net.Uri
           import android.os.Bundle
           import androidx.activity.ComponentActivity
           import androidx.activity.compose.setContent
@@ -77,51 +33,15 @@ jobs:
           import androidx.compose.material3.*
           import androidx.compose.runtime.*
           import androidx.compose.ui.Modifier
-          import androidx.compose.ui.platform.LocalContext
           import androidx.compose.ui.unit.dp
-
-          class MainActivity : ComponentActivity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContent { JarvisApp() }
-              }
-          }
+          class MainActivity: ComponentActivity(){ override fun onCreate(savedInstanceState: Bundle?){ super.onCreate(savedInstanceState); setContent{ JarvisApp() } } }
           @OptIn(ExperimentalMaterial3Api::class)
-          @Composable
-          fun JarvisApp(){
-              val ctx = LocalContext.current
-              var input by remember { mutableStateOf("") }
-              var log by remember { mutableStateOf("JARVIS Online - Boss bolo") }
-              Scaffold(topBar = { TopAppBar(title = { Text("JARVIS Mobile") }) }) { pad ->
-                  Column(Modifier.padding(pad).padding(16.dp).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)){
-                      Text(log)
-                      OutlinedTextField(value=input, onValueChange={input=it}, label={Text("Command: e.g. Call Ammi")}, modifier=Modifier.fillMaxWidth())
-                      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)){
-                          Button(onClick={
-                              when{
-                                  input.contains("whatsapp", true) -> {
-                                      val i = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")).apply{ setPackage("com.whatsapp"); putExtra("sms_body", input) }
-                                      try{ ctx.startActivity(i); log="WhatsApp draft khola" }catch(e:Exception){ log="WhatsApp nahi mila" }
-                                  }
-                                  input.contains("call", true) -> {
-                                      val num = input.filter{it.isDigit()}
-                                      ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$num"))); log="Dialer: $num"
-                                  }
-                                  else -> log="Brain: $input -> Samajh gaya Boss"
-                              }
-                          }){ Text("Run") }
-                          Button(onClick={input=""}){ Text("Clear") }
-                      }
-                  }
-              }
-          }
-          EOF
-
+          @Composable fun JarvisApp(){ var input by remember{ mutableStateOf("") }; var log by remember{ mutableStateOf("JARVIS Online") }; Scaffold(topBar={TopAppBar(title={Text("JARVIS")})}){ p -> Column(Modifier.padding(p).padding(16.dp)){ Text(log); OutlinedTextField(value=input, onValueChange={input=it}, label={Text("Command")}, modifier=Modifier.fillMaxWidth()); Button(onClick={log="Run: $input"}){ Text("Run") } } } }
+          ENDKOTLIN
       - name: Build APK
         uses: gradle/gradle-build-action@v3
         with:
           arguments: :app:assembleDebug
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
