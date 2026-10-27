@@ -30,6 +30,8 @@ jobs:
           ENDSET
           echo "" > build.gradle
           mkdir -p app/src/main/java/com/jarvis/mobile
+          mkdir -p app/src/main/res/values
+          echo '<resources><string name="app_name">JARVIS</string></resources>' > app/src/main/res/values/strings.xml
           cat > app/build.gradle <<'ENDGRADLE'
           plugins { id 'com.android.application' version '8.2.0' apply true }
           android { namespace 'com.jarvis.mobile'; compileSdk 34; defaultConfig { applicationId "com.jarvis.mobile"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" }; buildTypes { release { minifyEnabled false } } }
@@ -47,16 +49,16 @@ jobs:
               @Override protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   TextView tv = new TextView(this);
-                  tv.setText("JARVIS Mobile is ONLINE!\n\nBoss, APK Build Success!");
-                  tv.setTextSize(24);
-                  tv.setPadding(50,200,50,50);
+                  tv.setText("JARVIS ONLINE Boss!");
+                  tv.setTextSize(28);
+                  tv.setPadding(60,300,60,60);
                   setContentView(tv);
               }
           }
           ENDJAVA
           gradle wrapper --gradle-version 8.5
       - name: Build APK
-        run: ./gradlew :app:assembleDebug
+        run: ./gradlew :app:assembleDebug --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
