@@ -12,7 +12,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.5'
-      - name: Setup Android SDK
+      - name: Setup SDK
         run: |
           mkdir -p $ANDROID_HOME/cmdline-tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmd.zip
@@ -20,47 +20,55 @@ jobs:
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-      - name: Create project
+      - name: Create Project
         run: |
-          cat > settings.gradle <<'ENDSET'
+          cat > settings.gradle <<'EOF'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = "JARVIS"
           include ':app'
-          ENDSET
+          EOF
           echo "" > build.gradle
           mkdir -p app/src/main/java/com/jarvis/mobile
           mkdir -p app/src/main/res/values
           echo '<resources><string name="app_name">JARVIS</string></resources>' > app/src/main/res/values/strings.xml
-          cat > app/build.gradle <<'ENDGRADLE'
-          plugins { id 'com.android.application' version '8.2.0' apply true }
-          android { namespace 'com.jarvis.mobile'; compileSdk 34; defaultConfig { applicationId "com.jarvis.mobile"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" }; buildTypes { release { minifyEnabled false } } }
+          cat > app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' version '8.1.4' }
+          android {
+              namespace 'com.jarvis.mobile'
+              compileSdk 34
+              defaultConfig { applicationId "com.jarvis.mobile"; minSdk 24; targetSdk 34; versionCode 1; versionName "1.0" }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+              buildTypes { debug { minifyEnabled false } }
+          }
           dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
-          ENDGRADLE
-          cat > app/src/main/AndroidManifest.xml <<'ENDMANIFEST'
-          <?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET"/><application android:label="JARVIS" android:theme="@android:style/Theme.DeviceDefault.Light"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
-          ENDMANIFEST
-          cat > app/src/main/java/com/jarvis/mobile/MainActivity.java <<'ENDJAVA'
+          EOF
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:label="JARVIS">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          cat > app/src/main/java/com/jarvis/mobile/MainActivity.java <<'EOF'
           package com.jarvis.mobile;
-          import android.os.Bundle;
-          import android.widget.TextView;
-          import androidx.appcompat.app.AppCompatActivity;
+          import android.os.Bundle; import android.widget.TextView; import androidx.appcompat.app.AppCompatActivity;
           public class MainActivity extends AppCompatActivity {
-              @Override protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
+              @Override protected void onCreate(Bundle s) {
+                  super.onCreate(s);
                   TextView tv = new TextView(this);
-                  tv.setText("JARVIS ONLINE Boss!");
-                  tv.setTextSize(28);
-                  tv.setPadding(60,300,60,60);
+                  tv.setText("JARVIS ONLINE!\nBuild Success Boss!");
+                  tv.setTextSize(26); tv.setPadding(50,400,50,50);
                   setContentView(tv);
               }
           }
-          ENDJAVA
+          EOF
           gradle wrapper --gradle-version 8.5
-      - name: Build APK
-        run: ./gradlew :app:assembleDebug --stacktrace
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Build
+        run: ./gradlew :app:assembleDebug
+      - uses: actions/upload-artifact@v4
         with:
           name: jarvis-apk
           path: app/build/outputs/apk/debug/app-debug.apk
