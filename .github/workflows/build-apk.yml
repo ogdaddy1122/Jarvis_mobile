@@ -22,7 +22,12 @@ jobs:
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
       - name: Create project
         run: |
-          echo "include ':app'" > settings.gradle
+          cat > settings.gradle <<'ENDSET'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "JARVIS"
+          include ':app'
+          ENDSET
           echo "" > build.gradle
           mkdir -p app/src/main/java/com/jarvis/mobile
           cat > app/build.gradle <<'ENDGRADLE'
