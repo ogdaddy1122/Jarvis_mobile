@@ -31,27 +31,29 @@ jobs:
           echo "" > build.gradle
           mkdir -p app/src/main/java/com/jarvis/mobile
           cat > app/build.gradle <<'ENDGRADLE'
-          plugins { id 'com.android.application' version '8.2.0' apply true; id 'org.jetbrains.kotlin.android' version '1.9.10' apply true }
-          android { namespace 'com.jarvis.mobile'; compileSdk 34; defaultConfig { applicationId "com.jarvis.mobile"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" }; buildTypes { debug { minifyEnabled false } }; compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }; kotlinOptions { jvmTarget = '17' }; buildFeatures { compose true }; composeOptions { kotlinCompilerExtensionVersion '1.5.4' } }
-          dependencies { implementation 'androidx.core:core-ktx:1.12.0'; implementation 'androidx.activity:activity-compose:1.8.2'; implementation 'androidx.compose.ui:ui:1.6.8'; implementation 'androidx.compose.material3:material3:1.2.1' }
+          plugins { id 'com.android.application' version '8.2.0' apply true }
+          android { namespace 'com.jarvis.mobile'; compileSdk 34; defaultConfig { applicationId "com.jarvis.mobile"; minSdk 26; targetSdk 34; versionCode 1; versionName "1.0" }; buildTypes { release { minifyEnabled false } } }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
           ENDGRADLE
           cat > app/src/main/AndroidManifest.xml <<'ENDMANIFEST'
-          <?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET"/><application android:label="JARVIS" android:theme="@android:style/Theme.Material.Light"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
+          <?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET"/><application android:label="JARVIS" android:theme="@android:style/Theme.DeviceDefault.Light"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
           ENDMANIFEST
-          cat > app/src/main/java/com/jarvis/mobile/MainActivity.kt <<'ENDKOTLIN'
-          package com.jarvis.mobile
-          import android.os.Bundle
-          import androidx.activity.ComponentActivity
-          import androidx.activity.compose.setContent
-          import androidx.compose.foundation.layout.*
-          import androidx.compose.material3.*
-          import androidx.compose.runtime.*
-          import androidx.compose.ui.Modifier
-          import androidx.compose.ui.unit.dp
-          class MainActivity: ComponentActivity(){ override fun onCreate(savedInstanceState: Bundle?){ super.onCreate(savedInstanceState); setContent{ JarvisApp() } } }
-          @OptIn(ExperimentalMaterial3Api::class)
-          @Composable fun JarvisApp(){ var input by remember{ mutableStateOf("") }; var log by remember{ mutableStateOf("JARVIS Online Boss") }; Scaffold(topBar={TopAppBar(title={Text("JARVIS Mobile")})}){ p -> Column(Modifier.padding(p).padding(16.dp), verticalArrangement=Arrangement.spacedBy(12.dp)){ Text(log); OutlinedTextField(value=input, onValueChange={input=it}, label={Text("Command")}, modifier=Modifier.fillMaxWidth()); Button(onClick={log="You: $input"}){ Text("Send") } } } }
-          ENDKOTLIN
+          cat > app/src/main/java/com/jarvis/mobile/MainActivity.java <<'ENDJAVA'
+          package com.jarvis.mobile;
+          import android.os.Bundle;
+          import android.widget.TextView;
+          import androidx.appcompat.app.AppCompatActivity;
+          public class MainActivity extends AppCompatActivity {
+              @Override protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView tv = new TextView(this);
+                  tv.setText("JARVIS Mobile is ONLINE!\n\nBoss, APK Build Success!");
+                  tv.setTextSize(24);
+                  tv.setPadding(50,200,50,50);
+                  setContentView(tv);
+              }
+          }
+          ENDJAVA
           gradle wrapper --gradle-version 8.5
       - name: Build APK
         run: ./gradlew :app:assembleDebug
